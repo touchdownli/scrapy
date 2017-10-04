@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import scrapy
 class JobItem(scrapy.Item):
     #职位名称

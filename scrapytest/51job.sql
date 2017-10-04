@@ -1,4 +1,5 @@
---create database scrapy_51job DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+create database scrapy_51job DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+use scrapy_51job;
 CREATE TABLE `job_table` (
   `id` int(32) NOT NULL auto_increment COMMENT '',
   `job_title` varchar(256) NOT NULL COMMENT '',

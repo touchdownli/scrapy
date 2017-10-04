@@ -11,7 +11,7 @@ class Jobspider(scrapy.Spider):
     super(scrapy.Spider, self).__init__(*args, **kwargs)
     self.city=city
     base_url = 'http://jobs.51job.com/%s/p' % city
-    for x in range(2,5001):
+    for x in range(1,2):
       page = base_url+str(x)
       self.start_urls.append(page)
   def parse(self,response):
