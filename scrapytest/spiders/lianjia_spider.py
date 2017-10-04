@@ -3,9 +3,12 @@ import scrapy
 import urllib
 from scrapytest.lianjia_items import LianjiaItem
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+try:
+  import sys
+  reload(sys)
+  sys.setdefaultencoding('utf8')
+except NameError:
+  pass
 
 class LianjiaSpider(scrapy.Spider):
   name="LianjiaSpider"
@@ -26,10 +29,9 @@ class LianjiaSpider(scrapy.Spider):
      print(house_link)
      yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item)
   
-  from decimal import Decimal
   def parseHousePage(self,response):
      item = response.meta
-     base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li').extract()
+     base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li/text()').extract()
      if (len(base_info) > 0):
       item['layout'] = base_info[0].strip()
       item['floor'] = base_info[1].strip()
@@ -46,20 +48,20 @@ class LianjiaSpider(scrapy.Spider):
       item['property_right_length'] = base_info[12].strip()
       item['elevator'] = base_info[13].strip()
 
-     transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//li').extract()
+     transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//li/text()').extract()
      if (len(transaction) > 0):
-      item['id'] = transaction[0]
-      item['trans_right'] = transaction[1]
-      item['list_date'] = transaction[2]
-      item['house_property'] = transaction[3]
-      item['trans_age'] = transaction[4]
-      item['ownership_type'] = transaction[5]
+      item['id'] = transaction[0].strip()
+      item['trans_right'] = transaction[1].strip()
+      item['list_date'] = transaction[2].strip()
+      item['house_property'] = transaction[3].strip()
+      item['trans_age'] = transaction[4].strip()
+      item['ownership_type'] = transaction[5].strip()
      
-     house_title = response.xpath('.//div[@class="house-title"]//h1/text()').extract().strip()
+     house_title = response.xpath('.//div[@class="house-title"]//h1/text()').extract()[0].strip()
      item['community'] = house_title.split(" ")[0] 
      
      list_price = response.xpath('.//div[@class="info fr"]/div[@class="msg"]/span/label/text()')[0]
-     item['list_price'] = list_price.extract()
+     item['list_price'] = float(list_price.extract())
 
      item['trans_history'] = {}
      i = 0
@@ -67,8 +69,8 @@ class LianjiaSpider(scrapy.Spider):
       price = li.xpath('./span[@class="record_price"]/text()').extract()[0]
       price = price.strip("万")
       try:
-       price = Decimal(price)
-      except BaseException, e:
+       price = float(price)
+      except:
        price = -1
       detail = li.xpath('./p[@class="record_detail"]/text()').extract()[0]
       date = detail.split(",")[-1]
@@ -77,6 +79,6 @@ class LianjiaSpider(scrapy.Spider):
       item['trans_history'][date]['price'] = price
       if (i==0):
        item['trans_history'][date]['list_price'] = item['list_price']
-      ++i
+      i += 1
 
      yield item
