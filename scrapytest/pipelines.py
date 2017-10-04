@@ -62,3 +62,61 @@ class MySQL51JobPipeline(object):
     #该方法在spider被关闭时被调用。
     def close_spider(self, spider):
         pass
+
+class MySQLLianjiaPipeline(object):
+    def __init__(self):
+        self.conn = pymysql.connect(
+        user="root",
+        password="",
+        port=3306,
+        host="127.0.0.1",
+        db="scrapy_lianjia",
+        charset="utf8")
+        self.cursor = self.conn.cursor()
+
+    #pipeline默认调用
+    def process_item(self, item, spider):
+        try:
+            self.cursor.execute("\
+            insert into house(id, layout, floor, \
+            total_area,layout_structure,usalbe_area,\
+            build_type,orientation,constructure_year,\
+            decoration,build_structure,heating_mode,\
+            hshold_ladder_ratio,property_right_length,elevator,\
+            trans_right,community,house_property,\
+            trans_age,ownership_type) \
+            values(%s, %s, %s, \
+	      %s, %s, %s,\
+              %s, %s, %s, \
+              %s, %s, %s, \
+              %s, %s, %s, \
+              %s, %s, %s, \
+              %s,%s)",
+            (item['id'], item['layout'], item['floor'],
+            item['total_area'], item['layout_structure'], item['usable_area'],
+            item['build_type'], item['orientation'], item['constructure_year'],
+            item['decoration'], item['build_structure'], item['heating_mode'],
+            item['hshod_ladder_ratio'], item['property_right_length'], item['elevator'],
+            item['trans_right'], item['community'], item['house_property'],
+            item['trans_age'], item['ownership_type']))
+            # trans history
+            trans_history = item['trans_history']
+            '''
+            self.cursor.execute("insert into trans(id,price,list_price,trans_date,list_date) \
+            values(%s,%s,%s,%s,%s)",
+            (item['id'], item['']))
+            '''
+            self.conn.commit()
+        except pymysql.InternalError as e:
+            print("Error %d: %s" % (e.args[0], e.args[1]))
+        return item
+            
+    #异常处理
+    def _handle_error(self, failue, item, spider):
+        log.err(failure)
+    #该方法在spider被开启时被调用。
+    def open_spider(self, spider):
+        pass
+    #该方法在spider被关闭时被调用。
+    def close_spider(self, spider):
+        pass
