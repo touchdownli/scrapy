@@ -25,8 +25,16 @@ class LianjiaItem(scrapy.Item):
     ownership_type=scrapy.Field()
 
     community=scrapy.Field()
+    
     list_price=scrapy.Field()
+    price_adjustment_times=scrapy.Field()
+    visit_times=scrapy.Field()
+    follow_times=scrapy.Field()
+    view_times=scrapy.Field()
     trans_history=scrapy.Field()
 
     district=scrapy.Field()
+    business_district=scrapy.Field()
+    crawl_unit=scrapy.Field()
+    city=scrapy.Field()
 

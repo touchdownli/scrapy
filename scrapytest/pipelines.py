@@ -70,7 +70,7 @@ class MySQLLianjiaPipeline(object):
         password="",
         port=3306,
         host="127.0.0.1",
-        db="scrapy_lianjia",
+        db="scrapy",
         charset="utf8")
         self.cursor = self.conn.cursor()
 
@@ -78,15 +78,17 @@ class MySQLLianjiaPipeline(object):
     def process_item(self, item, spider):
         try:
             self.cursor.execute("\
-            insert into house(id, layout, floor, \
-            total_area,layout_structure,usalbe_area,\
-            build_type,orientation,constructure_year,\
+            insert into lianjia_house(id, layout, floor, \
+            total_area,layout_structure,usable_area,\
+            build_type,orientation,construction_year,\
             decoration,build_structure,heating_mode,\
             hshold_ladder_ratio,property_right_length,elevator,\
-            trans_right,community,house_property,\
-            trans_age,ownership_type) \
+            trans_right,house_property,ownership_type,\
+            community,district,business_district,\
+            crawl_unit,city) \
             values(%s, %s, %s, \
-	      %s, %s, %s,\
+              %s, %s, %s,\
+              %s, %s, %s, \
               %s, %s, %s, \
               %s, %s, %s, \
               %s, %s, %s, \
@@ -94,18 +96,30 @@ class MySQLLianjiaPipeline(object):
               %s,%s)",
             (item['id'], item['layout'], item['floor'],
             item['total_area'], item['layout_structure'], item['usable_area'],
-            item['build_type'], item['orientation'], item['constructure_year'],
+            item['build_type'], item['orientation'], item['construction_year'],
             item['decoration'], item['build_structure'], item['heating_mode'],
-            item['hshod_ladder_ratio'], item['property_right_length'], item['elevator'],
-            item['trans_right'], item['community'], item['house_property'],
-            item['trans_age'], item['ownership_type']))
+            item['hshold_ladder_ratio'], item['property_right_length'], item['elevator'],
+            item['trans_right'], item['house_property'],item['ownership_type'],
+            item['community'],item['district'],item['business_district'],
+            item['crawl_unit'],item['city'])
+            )
             # trans history
             trans_history = item['trans_history']
-            '''
-            self.cursor.execute("insert into trans(id,price,list_price,trans_date,list_date) \
-            values(%s,%s,%s,%s,%s)",
-            (item['id'], item['']))
-            '''
+            for (trans_date,trans_info) in trans_history.items():
+              self.cursor.execute("insert into trans_history(\
+              id,trans_price,trans_date,\
+              list_price,list_date,trans_age,\
+              price_adjustment_times,visit_times,follow_times,\
+              view_times) \
+              values(\
+              %s,%s,%s,\
+              %s,%s,%s,\
+              %s,%s,%s,\
+              %s)",
+              (item['id'], trans_info['trans_price'], trans_date,
+               trans_info['list_price'],trans_info['list_date'],trans_info['trans_age'],
+               trans_info['price_adjustment_times'],trans_info['visit_times'],trans_info['follow_times'],
+               trans_info['view_times']))
             self.conn.commit()
         except pymysql.InternalError as e:
             print("Error %d: %s" % (e.args[0], e.args[1]))
