@@ -22,19 +22,19 @@ NEWSPIDER_MODULE = 'scrapytest.spiders'
 #ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 2
+CONCURRENT_REQUESTS = 16
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 1
+DOWNLOAD_DELAY = 0.02
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED = False
-
+REDIRECT_ENABLED = False
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
 
@@ -55,6 +55,8 @@ COOKIES_ENABLED = False
 DOWNLOADER_MIDDLEWARES = {
 #    'scrapytest.middlewares.MyCustomDownloaderMiddleware': 543,
     'scrapytest.middlewares.MyUserAgentMiddleware': 400,
+    #'scrapytest.proxy_middleware.AutoProxyMiddleware': 543,
+    #'scrapytest.manual_proxy_middleware.ProxyMiddleware': 543,
 }
 
 # Enable or disable extensions
@@ -68,7 +70,7 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     'scrapytest.pipelines.ScrapytestPipeline': 300,
     #'scrapytest.pipelines.MySQL51JobPipeline': 300,
-    'scrapytest.pipelines.MySQLLianjiaPipeline': 300,
+    'scrapytest.pipelines.MySQLLianjiaPipeline': 301,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

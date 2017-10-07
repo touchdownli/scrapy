@@ -28,10 +28,11 @@ class LianjiaSpider(scrapy.Spider):
     item = LianjiaItem()
     item['city'] = self.city
     item['crawl_unit'] = self.crawl_unit
-    #print("****",response.body)
+    print("****",response.url)
     for box in response.xpath('.//div[@class="leftContent"]/ul[@class="listContent"]/li/a'):
      house_link = box.xpath('.//@href').extract()[0]
-     yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item)
+     print("house_link:%s" % house_link)
+     yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=False)
   
   def parseHousePage(self,response):
      item = response.meta

@@ -31,6 +31,7 @@ class LianjiaItem(scrapy.Item):
     visit_times=scrapy.Field()
     follow_times=scrapy.Field()
     view_times=scrapy.Field()
+    
     trans_history=scrapy.Field()
 
     district=scrapy.Field()

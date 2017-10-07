@@ -2,7 +2,7 @@
 USE `scrapy`;
 drop table lianjia_house;
 CREATE TABLE `lianjia_house` (
-  `id` bigint NOT NULL COMMENT '链家编号',
+  `id` varchar(32) NOT NULL COMMENT '链家编号',
   `layout` varchar(256) NOT NULL COMMENT '户型',
   `floor` varchar(128) NOT NULL COMMENT '楼层',
   `total_area` varchar(256) NOT NULL DEFAULT '' COMMENT '建筑面积',
@@ -30,7 +30,7 @@ CREATE TABLE `lianjia_house` (
 
 drop table trans_history;
 CREATE TABLE `trans_history` (
-  `id` bigint NOT NULL COMMENT '',
+  `id` varchar(32) NOT NULL COMMENT '',
   `trans_price` float NOT NULL DEFAULT 0 COMMENT '成交价格',
   `trans_date` date NOT NULL COMMENT '成交日期',
   `list_price` float NOT NULL DEFAULT 0 COMMENT '挂牌价格',
