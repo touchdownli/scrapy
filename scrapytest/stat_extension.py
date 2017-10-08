@@ -26,7 +26,7 @@ class ContinueCrawlStatusCheck(object):
         return ext
 
     def spider_closed(self, spider):
-        if (self.stats.get_value('item_scraped_count') < 3):
+        if (self.stats.get_value('item_scraped_count', 0) < 3):
           self.file.write(spider.crawl_unit + "_continue:False")
         else:
           self.file.write(spider.crawl_unit + "_continue:True")
