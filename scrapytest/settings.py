@@ -59,11 +59,13 @@ DOWNLOADER_MIDDLEWARES = {
     #'scrapytest.manual_proxy_middleware.ProxyMiddleware': 543,
 }
 
+#DUPEFILTER_CLASS = 'scrapytest.url_filter.CustomURLFilter'
+
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-#}
+EXTENSIONS = {
+    'scrapytest.stat_extension.ContinueCrawlStatusCheck': 100,
+}
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html

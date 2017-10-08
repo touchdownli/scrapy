@@ -14,6 +14,7 @@ class LianjiaSpider(scrapy.Spider):
   name="LianjiaSpider"
   #allowed_domains=[""]
   start_urls = []
+  crawled_urls = set()
 
   def __init__(self, city="bj", crawl_unit="dongcheng", *args, **kwargs):
     super(scrapy.Spider, self).__init__(*args, **kwargs)
@@ -21,9 +22,17 @@ class LianjiaSpider(scrapy.Spider):
     self.city = city
     self.crawl_unit = crawl_unit
     self.start_urls = []
+    self.file = open("%s_%s_crawled_urls.txt" % (crawl_unit,city), "a+")
+    self.file.seek(0)
     for i in range(1,100):
       self.start_urls.append(base_url + str(i) + "/")
-
+    self.crawled_urls = set([x.strip() for x in self.file.readlines()])
+    print("crawled_urls size:%d" % len(self.crawled_urls))
+    #raise Exception("stop")
+  
+  def closed(self, reason):
+    self.file.close()
+    
   def parse(self,response):
     item = LianjiaItem()
     item['city'] = self.city
@@ -32,9 +41,17 @@ class LianjiaSpider(scrapy.Spider):
     for box in response.xpath('.//div[@class="leftContent"]/ul[@class="listContent"]/li/a'):
      house_link = box.xpath('.//@href').extract()[0]
      print("house_link:%s" % house_link)
-     yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=False)
-  
+
+     is_crawled_success = house_link in self.crawled_urls
+     if not is_crawled_success:
+      yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
+     else:
+      print("%s in crawled_urls" % house_link)
+      
   def parseHousePage(self,response):
+     self.crawled_urls.add(response.url)
+     self.file.write(response.url + "\n")
+     
      item = response.meta
      base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li/text()').extract()
      if (len(base_info) > 0):
