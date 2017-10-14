@@ -70,7 +70,7 @@ EXTENSIONS = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'scrapytest.pipelines.ScrapytestPipeline': 300,
+    #'scrapytest.pipelines.ScrapytestPipeline': 300,
     #'scrapytest.pipelines.MySQL51JobPipeline': 300,
     'scrapytest.pipelines.MySQLLianjiaPipeline': 301,
 }
