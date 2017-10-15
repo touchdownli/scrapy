@@ -5,7 +5,6 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
-# -*- coding: utf-8 -*-
 # 引入文件
 from scrapy.exceptions import DropItem
 import json
@@ -74,35 +73,37 @@ class MySQLLianjiaPipeline(object):
         charset="utf8")
         self.cursor = self.conn.cursor()
 
+    def insert_lianjian_house(self, item):
+        self.cursor.execute("\
+        insert into lianjia_house(id, layout, floor, \
+        total_area,layout_structure,usable_area,\
+        build_type,orientation,construction_year,\
+        decoration,build_structure,heating_mode,\
+        hshold_ladder_ratio,property_right_length,elevator,\
+        trans_right,house_property,ownership_type,\
+        community,district,business_district,\
+        crawl_unit,city) \
+        values(%s, %s, %s, \
+          %s, %s, %s,\
+          %s, %s, %s, \
+          %s, %s, %s, \
+          %s, %s, %s, \
+          %s, %s, %s, \
+          %s, %s, %s, \
+          %s,%s)",
+        (item['id'], item['layout'], item['floor'],
+        item['total_area'], item['layout_structure'], item['usable_area'],
+        item['build_type'], item['orientation'], item['construction_year'],
+        item['decoration'], item['build_structure'], item['heating_mode'],
+        item['hshold_ladder_ratio'], item['property_right_length'], item['elevator'],
+        item['trans_right'], item['house_property'],item['ownership_type'],
+        item['community'],item['district'],item['business_district'],
+        item['crawl_unit'],item['city'])
+        )
     #pipeline默认调用
     def process_item(self, item, spider):
         try:
-            self.cursor.execute("\
-            insert into lianjia_house(id, layout, floor, \
-            total_area,layout_structure,usable_area,\
-            build_type,orientation,construction_year,\
-            decoration,build_structure,heating_mode,\
-            hshold_ladder_ratio,property_right_length,elevator,\
-            trans_right,house_property,ownership_type,\
-            community,district,business_district,\
-            crawl_unit,city) \
-            values(%s, %s, %s, \
-              %s, %s, %s,\
-              %s, %s, %s, \
-              %s, %s, %s, \
-              %s, %s, %s, \
-              %s, %s, %s, \
-              %s, %s, %s, \
-              %s,%s)",
-            (item['id'], item['layout'], item['floor'],
-            item['total_area'], item['layout_structure'], item['usable_area'],
-            item['build_type'], item['orientation'], item['construction_year'],
-            item['decoration'], item['build_structure'], item['heating_mode'],
-            item['hshold_ladder_ratio'], item['property_right_length'], item['elevator'],
-            item['trans_right'], item['house_property'],item['ownership_type'],
-            item['community'],item['district'],item['business_district'],
-            item['crawl_unit'],item['city'])
-            )
+            insert_lianjian_house(item)
             # trans history
             trans_history = item['trans_history']
             for (trans_date,trans_info) in trans_history.items():
@@ -134,3 +135,30 @@ class MySQLLianjiaPipeline(object):
     #该方法在spider被关闭时被调用。
     def close_spider(self, spider):
         pass
+class MySQLSecondHandSaleLianjiaPipeline(MySQLLianjiaPipeline):
+    def process_item(self, item, spider):
+        try:
+            self.insert_lianjian_house(item)
+
+            self.cursor.execute("insert into second_hand_house_sale_info(\
+            id,list_date,last_trans_date,\
+            trans_age,mortgage,certicate) \
+            values(\
+            %s,%s,%s,\
+            %s,%s,%s)",
+            (item['id'],item['list_date'],item['last_trans_date'],
+            item['trans_age'],item['mortgage'],item['certicate']))
+             
+            self.cursor.execute("insert into second_hand_house_price_info(\
+            id,list_price,crawl_date,\
+            visit_times,follow_times) \
+            values(\
+            %s,%s,%s,\
+            %s,%s)",
+            (item['id'],item['list_price'],item['crawl_date'],
+            item['visit_times'],item['follow_times']))
+            
+            self.conn.commit()
+        except pymysql.InternalError as e:
+            print("Error %d: %s" % (e.args[0], e.args[1]))
+        return item

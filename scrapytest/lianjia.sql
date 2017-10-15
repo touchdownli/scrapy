@@ -1,6 +1,6 @@
 #CREATE DATABASE `scrapy` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `scrapy`;
-drop table lianjia_house;
+#drop table lianjia_house;
 CREATE TABLE `lianjia_house` (
   `id` varchar(32) NOT NULL COMMENT '链家编号',
   `layout` varchar(256) NOT NULL COMMENT '户型',
@@ -28,7 +28,7 @@ CREATE TABLE `lianjia_house` (
   PRIMARY KEY (`id`)
 ) ENGINE = MyISAM DEFAULT CHARSET = utf8;
 
-drop table trans_history;
+#drop table trans_history;
 CREATE TABLE `trans_history` (
   `id` varchar(32) NOT NULL COMMENT '',
   `trans_price` float NOT NULL DEFAULT 0 COMMENT '成交价格',
@@ -40,4 +40,21 @@ CREATE TABLE `trans_history` (
   `visit_times` int(8) NOT NULL DEFAULT -1 COMMENT '带看次数',
   `follow_times` int(8) NOT NULL DEFAULT -1 COMMENT '关注次数',
   `view_times` int(8) NOT NULL DEFAULT -1 COMMENT '浏览次数'
+) ENGINE = MyISAM DEFAULT CHARSET = utf8;
+
+CREATE TABLE `second_hand_house_sale_info` (
+  `id` varchar(32) NOT NULL COMMENT '',
+  `list_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '挂牌日期',
+  `last_trans_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '上次交易',
+  `trans_age` varchar(32) NOT NULL DEFAULT '' COMMENT '成交满几年',
+  `mortgage`  varchar(32) NOT NULL DEFAULT '' COMMENT '抵押信息',
+  `certicate` varchar(32) NOT NULL DEFAULT '' COMMENT '房本备件'
+) ENGINE = MyISAM DEFAULT CHARSET = utf8;
+
+CREATE TABLE `second_hand_house_price_info` (
+  `id` varchar(32) NOT NULL COMMENT '',
+  `list_price` float NOT NULL DEFAULT 0 COMMENT '挂牌价格',
+  `crawl_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '价格抓取日期',
+  `visit_times` int(8) NOT NULL DEFAULT -1 COMMENT '带看次数',
+  `follow_times` int(8) NOT NULL DEFAULT -1 COMMENT '关注次数'
 ) ENGINE = MyISAM DEFAULT CHARSET = utf8;

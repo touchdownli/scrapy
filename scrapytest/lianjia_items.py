@@ -38,4 +38,10 @@ class LianjiaItem(scrapy.Item):
     business_district=scrapy.Field()
     crawl_unit=scrapy.Field()
     city=scrapy.Field()
+    
+    #second_hand_house_sale_info
+    last_trans_date=scrapy.Field()
+    crawl_date=scrapy.Field()
+    mortgage=scrapy.Field()
+    certicate=scrapy.Field()
 

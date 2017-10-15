@@ -10,48 +10,66 @@ try:
 except NameError:
   pass
 
+from datetime import datetime
+import json
+
 class LianjiaSpider(scrapy.Spider):
   name="LianjiaSpider"
   #allowed_domains=[""]
   start_urls = []
-  crawled_urls = set()
+  crawled_urls = {}
+  base_url_pattern = 'https://%s.lianjia.com/chengjiao/%s/pg'
+  base_url = ""
+  crawled_urls_txt_name = "%s_%s_crawled_urls.txt"
+  crawl_url_xpath = './/div[@class="leftContent"]/ul[@class="listContent"]/li'
 
   def __init__(self, city="bj", crawl_unit="dongcheng", *args, **kwargs):
     super(scrapy.Spider, self).__init__(*args, **kwargs)
-    base_url = 'https://%s.lianjia.com/chengjiao/%s/pg' % (city, crawl_unit)
+    self.base_url = self.base_url_pattern % (city, crawl_unit)
     self.city = city
     self.crawl_unit = crawl_unit
-    self.start_urls = []
-    self.file = open("%s_%s_crawled_urls.txt" % (crawl_unit,city), "a+")
+    self.start_urls = [self.base_url + "1/"]
+    self.file = open(self.crawled_urls_txt_name % (crawl_unit,city), "a+")
     self.file.seek(0)
-    for i in range(1,100):
-      self.start_urls.append(base_url + str(i) + "/")
-    self.crawled_urls = set([x.strip() for x in self.file.readlines()])
+    for x in self.file.readlines():
+      cols = x.strip().split(" ")
+      if (len(cols) > 1):
+        self.crawled_urls[cols[0]] = cols[1:]
+      else:
+        self.crawled_urls[cols[0]] = []
     print("crawled_urls size:%d" % len(self.crawled_urls))
     #raise Exception("stop")
   
   def closed(self, reason):
     self.file.close()
-    
-  def parse(self,response):
+  
+  def isCrawled(self, link, item):
+    return link in self.crawled_urls
+  
+  def parse(self, response):
+    ex = response.xpath('.//div[@class="leftContent"]//div[@class="page-box fr"]/div[@class="page-box house-lst-page-box"]/@page-data').extract()
+    page_data = json.loads(ex[0])
+    totalPage = page_data['totalPage']
+    for i in range(1,totalPage + 1):
+      pg_link = self.base_url + str(i) + "/"
+      yield scrapy.Request(pg_link,callback=self.parseHouseList)
+      
+  def parseHouseList(self,response):
     item = LianjiaItem()
     item['city'] = self.city
     item['crawl_unit'] = self.crawl_unit
     print("****",response.url)
-    for box in response.xpath('.//div[@class="leftContent"]/ul[@class="listContent"]/li/a'):
-     house_link = box.xpath('.//@href').extract()[0]
+    for box in response.xpath(self.crawl_url_xpath):
+     house_link = box.xpath('.//a/@href').extract()[0]
      print("house_link:%s" % house_link)
 
-     is_crawled_success = house_link in self.crawled_urls
+     is_crawled_success = isCrawled(house_link, item)
      if not is_crawled_success:
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
      else:
       print("%s in crawled_urls" % house_link)
       
   def parseHousePage(self,response):
-     self.crawled_urls.add(response.url)
-     self.file.write(response.url + "\n")
-     
      item = response.meta
      base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li/text()').extract()
      if (len(base_info) > 0):
@@ -143,4 +161,97 @@ class LianjiaSpider(scrapy.Spider):
      agent_a = response.xpath('.//div[@class="agent-box"]/div[@class="myAgent"]/div[@class="name"]/a/text()')
      item['district'] = agent_a[0].extract().strip()
      item['business_district'] = agent_a[1].extract().strip()
+     
+     self.crawled_urls[response.url] = [trans_date]
+     self.file.write(" ".join([response.url, trans_date]) + "\n")
+     return item
+
+class SecondHandSaleLianjiaSpider(LianjiaSpider):
+  name="SecondHandSaleLianjiaSpider"
+  #bj.lianjia.com/ershoufang/chaoyang/
+  base_url_pattern = 'https://%s.lianjia.com/ershoufang/%s/pg'
+  crawled_urls_txt_name = "%s_%s_second_house_sale_crawled_urls.txt"
+  crawl_url_xpath = './/div[@class="leftContent"]/ul[@class="sellListContent"]/li'
+  def isCrawled(self, link, item):
+    if link in self.crawled_urls:
+      if item['list_price'] == self.crawled_urls[link][0]:
+        return True
+    return False
+    
+  def parseHouseList(self,response):
+    item = LianjiaItem()
+    item['city'] = self.city
+    item['crawl_unit'] = self.crawl_unit
+    item['crawl_date'] = datetime.now().strftime('%Y-%m-%d')
+    print("****",response.url)
+    for box in response.xpath(self.crawl_url_xpath):
+     house_link = box.xpath('.//a/@href').extract()[0]
+     print("house_link:%s" % house_link)
+     item['id'] = house_link[house_link.rfind("/")+1:].split(".")[0]
+     item['list_price'] = box.xpath('.//div[@class="totalPrice"]/span/text()').extract()[0]
+     is_crawled_success = self.isCrawled(house_link, item)
+     if not is_crawled_success:
+      yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
+     else:
+      print("%s in crawled_urls" % house_link)
+  def parseHousePage(self,response):
+     item = response.meta
+     base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li/text()').extract()
+     if (len(base_info) > 0):
+      item['layout'] = base_info[0].strip()
+      item['floor'] = base_info[1].strip()
+      item['total_area'] = base_info[2].strip()
+      item['layout_structure'] = base_info[3].strip()
+      item['usable_area'] = base_info[4].strip()
+      item['build_type'] = base_info[5].strip()
+      item['orientation'] = base_info[6].strip()
+      
+      item['decoration'] = base_info[7].strip()
+      item['build_structure'] = base_info[8].strip()
+      item['hshold_ladder_ratio'] = base_info[9].strip()
+      item['heating_mode'] = base_info[10].strip()
+      item['elevator'] = base_info[11].strip()
+      item['property_right_length'] = base_info[12].strip()
+     else:
+      print("base_info %s is none" % response.url)
+     
+     construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
+     div[@class="area"]/div[@class="subInfo"]/text()').extract()
+     item['construction_year'] = construction_year[0].split("年")[0]
+     if not item['construction_year'].isdigit():
+        item['construction_year'] = "0000"
+     
+     list_price = response.xpath('.//div[@class="overview"]/div[@class="content"]/div[@class="price "]/span/text()').extract()
+     item['list_price'] = list_price[0]
+     
+     transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//ul/li')
+     i = -1
+     colnames = ['list_date','trans_right','last_trans_date','house_property',
+     'trans_age','ownership_type','mortgage','certicate']
+     for li in transaction:
+       i += 1
+       if i == 6:
+        item[colnames[i]] = li.xpath('./span/text()').extract()[1].strip()
+        continue
+       text = li.xpath('./text()').extract()
+       if len(text) < 1:
+        text = [""]
+       item[colnames[i]] = text[0].strip()
+     
+     community = response.xpath('.//div[@class="overview"]/div[@class="content"]//div[@class="communityName"]/a/text()').extract()[0].strip()
+     item['community'] = community
+     
+     area = response.xpath('.//div[@class="overview"]/div[@class="content"]//\
+     div[@class="areaName"]/span[@class="info"]/a/text()').extract()
+     item['business_district'] = area[1].strip()
+     item['district'] = area[0].strip()
+     
+     title_wrapper = response.xpath('.//div[@class="title-wrapper"]')
+     follow_times = title_wrapper.xpath('.//span[@id="favCount"]/text()').extract()[0]
+     item['follow_times'] = follow_times
+     visit_times = title_wrapper.xpath('.//span[@id="cartCount"]/text()').extract()[0]
+     item['visit_times'] = visit_times
+     
+     self.crawled_urls[response.url] = [item['list_price'],item['list_date']]
+     self.file.write(" ".join([response.url,item['list_price'],item['list_date']]) + "\n")
      return item

@@ -72,7 +72,8 @@ EXTENSIONS = {
 ITEM_PIPELINES = {
     #'scrapytest.pipelines.ScrapytestPipeline': 300,
     #'scrapytest.pipelines.MySQL51JobPipeline': 300,
-    'scrapytest.pipelines.MySQLLianjiaPipeline': 301,
+    #'scrapytest.pipelines.MySQLLianjiaPipeline': 301,
+    'scrapytest.pipelines.MySQLSecondHandSaleLianjiaPipeline':301
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
