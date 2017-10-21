@@ -39,7 +39,8 @@ CREATE TABLE `trans_history` (
   `price_adjustment_times` int(8) NOT NULL DEFAULT -1 COMMENT '调价次数',
   `visit_times` int(8) NOT NULL DEFAULT -1 COMMENT '带看次数',
   `follow_times` int(8) NOT NULL DEFAULT -1 COMMENT '关注次数',
-  `view_times` int(8) NOT NULL DEFAULT -1 COMMENT '浏览次数'
+  `view_times` int(8) NOT NULL DEFAULT -1 COMMENT '浏览次数',
+  PRIMARY KEY (`id`,`trans_date`)
 ) ENGINE = MyISAM DEFAULT CHARSET = utf8;
 
 CREATE TABLE `second_hand_house_sale_info` (
@@ -48,7 +49,8 @@ CREATE TABLE `second_hand_house_sale_info` (
   `last_trans_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '上次交易',
   `trans_age` varchar(32) NOT NULL DEFAULT '' COMMENT '成交满几年',
   `mortgage`  varchar(32) NOT NULL DEFAULT '' COMMENT '抵押信息',
-  `certicate` varchar(32) NOT NULL DEFAULT '' COMMENT '房本备件'
+  `certicate` varchar(32) NOT NULL DEFAULT '' COMMENT '房本备件',
+  PRIMARY KEY (`id`,`list_date`)
 ) ENGINE = MyISAM DEFAULT CHARSET = utf8;
 
 CREATE TABLE `second_hand_house_price_info` (
@@ -56,5 +58,6 @@ CREATE TABLE `second_hand_house_price_info` (
   `list_price` float NOT NULL DEFAULT 0 COMMENT '挂牌价格',
   `crawl_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '价格抓取日期',
   `visit_times` int(8) NOT NULL DEFAULT -1 COMMENT '带看次数',
-  `follow_times` int(8) NOT NULL DEFAULT -1 COMMENT '关注次数'
+  `follow_times` int(8) NOT NULL DEFAULT -1 COMMENT '关注次数',
+  PRIMARY KEY (`id`,`crawl_date`)
 ) ENGINE = MyISAM DEFAULT CHARSET = utf8;
