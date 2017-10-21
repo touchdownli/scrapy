@@ -9,6 +9,7 @@
 from scrapy.exceptions import DropItem
 import json
 import codecs
+import logging
 
 class ScrapytestPipeline(object):
     def __init__(self):

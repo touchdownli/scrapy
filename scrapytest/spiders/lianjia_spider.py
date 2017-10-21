@@ -33,6 +33,7 @@ class LianjiaSpider(scrapy.Spider):
   '户型结构':'layout_structure',
   '套内面积':'usable_area',
   '建筑类型':'build_type',
+  '别墅类型':'build_type',
   '房屋朝向':'orientation',
   '建筑年代':'construction_year',
   '装修情况':'decoration',
@@ -150,9 +151,9 @@ class LianjiaSpider(scrapy.Spider):
     return True
     
   def parseHousePage(self,response):
-     if not self.extractBaseInfo(response)
+     if not self.extractBaseInfo(response):
         return
-     
+     item = response.meta
      house_title = response.xpath('.//div[@class="house-title"]/div[@class="wrapper"]')
      item['community'] = house_title.xpath('./h1/text()').extract()[0].strip().split(" ")[0]
      current_trans_date = house_title.xpath('./span/text()').extract()[0].strip().split(" ")[0]
@@ -251,7 +252,6 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
     for box in response.xpath(self.crawl_url_xpath):
      house_link = box.xpath('.//a/@href').extract()[0]
      print("house_link:%s" % house_link)
-     item['id'] = house_link[house_link.rfind("/")+1:].split(".")[0]
      item['list_price'] = box.xpath('.//div[@class="totalPrice"]/span/text()').extract()[0]
      is_crawled_success = self.isCrawled(house_link, item)
      if not is_crawled_success:
@@ -259,9 +259,12 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
      else:
       print("%s in crawled_urls" % house_link)
   def parseHousePage(self,response):
-     if not self.extractBaseInfo(response)
+     if not self.extractBaseInfo(response):
         return
      
+     item = response.meta
+     house_link = response.url
+     item['id'] = house_link[house_link.rfind("/")+1:].split(".")[0]
      construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
      div[@class="area"]/div[@class="subInfo"]/text()').extract()
      item['construction_year'] = construction_year[0].split("年")[0]
@@ -270,20 +273,6 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
      
      list_price = response.xpath('.//div[@class="overview"]/div[@class="content"]/div[@class="price "]/span/text()').extract()
      item['list_price'] = list_price[0]
-     
-     transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//ul/li')
-     i = -1
-     colnames = ['list_date','trans_right','last_trans_date','house_property',
-     'trans_age','ownership_type','mortgage','certicate']
-     for li in transaction:
-       i += 1
-       if i == 6:
-        item[colnames[i]] = li.xpath('./span/text()').extract()[1].strip()
-        continue
-       text = li.xpath('./text()').extract()
-       if len(text) < 1:
-        text = [""]
-       item[colnames[i]] = text[0].strip()
      
      community = response.xpath('.//div[@class="overview"]/div[@class="content"]//div[@class="communityName"]/a/text()').extract()[0].strip()
      item['community'] = community
