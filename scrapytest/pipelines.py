@@ -48,8 +48,8 @@ class MySQL51JobPipeline(object):
             item['salary_range'], item['school_level'], item['experience_year'],
             item['company_feature'], item['company_size'], item['job_desc'], item['city']))
             self.conn.commit()
-        except pymysql.InternalError as e:
-            print("Error %d: %s" % (e.args[0], e.args[1]))
+        except Exception as e:
+            logging.error("Error: %s" % (e))
         return item
             
     #异常处理
@@ -80,11 +80,13 @@ class MySQLLianjiaPipeline(object):
         build_type,orientation,construction_year,\
         decoration,build_structure,heating_mode,\
         hshold_ladder_ratio,property_right_length,elevator,\
+        water_type,electric_type,gas_price,\
         trans_right,house_property,ownership_type,\
         community,district,business_district,\
         crawl_unit,city) \
         values(%s, %s, %s, \
           %s, %s, %s,\
+          %s, %s, %s, \
           %s, %s, %s, \
           %s, %s, %s, \
           %s, %s, %s, \
@@ -96,6 +98,7 @@ class MySQLLianjiaPipeline(object):
         item['build_type'], item['orientation'], item['construction_year'],
         item['decoration'], item['build_structure'], item['heating_mode'],
         item['hshold_ladder_ratio'], item['property_right_length'], item['elevator'],
+        item['water_type'], item['electric_type'], item['gas_price'],
         item['trans_right'], item['house_property'],item['ownership_type'],
         item['community'],item['district'],item['business_district'],
         item['crawl_unit'],item['city'])
@@ -128,13 +131,13 @@ class MySQLLianjiaPipeline(object):
           self.insert_trans_history(item)
           self.conn.commit()
       except Exception as e:
-          print("Error %d: %s" % (e.args[0], e.args[1]))
+          logging.error("Error: %s" % (e))
           try:
             # trans history
             self.insert_trans_history(item)
             self.conn.commit()
           except Exception as e:
-            print("Error %d: %s" % (e.args[0], e.args[1]))
+            logging.error("Error: %s" % (e))
       return item
             
     #异常处理
@@ -172,17 +175,17 @@ class MySQLSecondHandSaleLianjiaPipeline(MySQLLianjiaPipeline):
           self.insert_lianjian_house(item)
           self.conn.commit()
       except Exception as e:
-          print("Error %d: %s" % (e.args[0], e.args[1]))
+          logging.error("Error: %s" % (e))
           
       try:
           self.insert_sale_info(item)
           self.conn.commit()
       except Exception as e:
-          print("Error %d: %s" % (e.args[0], e.args[1]))
+          logging.error("Error: %s" % (e))
           
       try:
           self.insert_price_info(item)
           self.conn.commit()
       except Exception as e:
-          print("Error %d: %s" % (e.args[0], e.args[1]))          
+          logging.error("Error: %s" % (e))          
       return item

@@ -24,6 +24,36 @@ class LianjiaSpider(scrapy.Spider):
   base_url = ""
   crawled_urls_txt_name = "%s_%s_crawled_urls.txt"
   crawl_url_xpath = './/div[@class="leftContent"]/ul[@class="listContent"]/li'
+  
+  base_info_name_2_item_name = {
+  '链家编号':'id',
+  '房屋户型':'layout',
+  '所在楼层':'floor',
+  '建筑面积':'total_area',
+  '户型结构':'layout_structure',
+  '套内面积':'usable_area',
+  '建筑类型':'build_type',
+  '房屋朝向':'orientation',
+  '建筑年代':'construction_year',
+  '装修情况':'decoration',
+  '建筑结构':'build_structure',
+  '供暖方式':'heating_mode',
+  '梯户比例':'hshold_ladder_ratio',
+  '产权年限':'property_right_length',
+  '配备电梯':'elevator',
+  '用水类型':'water_type',
+  '用电类型':'electric_type',
+  '燃气价格':'gas_price',
+  '交易权属':'trans_right',
+  '挂牌时间':'list_date',
+  '房屋用途':'house_property',
+  '上次交易':'last_trans_date',
+  '房屋年限':'trans_age',
+  '房权所属':'ownership_type',
+  '产权所属':'ownership_type',
+  '抵押信息':'mortgage',
+  '房本备件':'certicate'
+  }
 
   def __init__(self, city="bj", crawl_unit="dongcheng", *args, **kwargs):
     super(scrapy.Spider, self).__init__(*args, **kwargs)
@@ -85,46 +115,43 @@ class LianjiaSpider(scrapy.Spider):
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
      else:
       print("%s in crawled_urls" % house_link)
+  
+  def extractBaseInfo(self,response):
+    item = response.meta
+    
+    for field in self.base_info_name_2_item_name.values():
+      item[field] = ""
       
-  def parseHousePage(self,response):
-     item = response.meta
-     base_infos = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li')
-     base_info = []
-     for li in base_infos:
-      text = li.xpath('./text()')
-      if len(text)>0:
-        base_info.append(text.extract()[0].strip())
+    base_infos = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li')
+    for li in base_infos:
+      span = li.xpath('./span/text()').extract()[0].strip()
+      if (span in self.base_info_name_2_item_name):
+        text = li.xpath('./text()')
+        if len(text) > 0:
+          item[self.base_info_name_2_item_name[span]] = text.extract()[0].strip()
       else:
-        base_info.append("")
-     
-     if (len(base_info) == 14):
-      item['layout'] = base_info[0].strip()
-      item['floor'] = base_info[1].strip()
-      item['total_area'] = base_info[2].strip()
-      item['layout_structure'] = base_info[3].strip()
-      item['usable_area'] = base_info[4].strip()
-      item['build_type'] = base_info[5].strip()
-      item['orientation'] = base_info[6].strip()
-      item['construction_year'] = base_info[7].strip()
-      item['decoration'] = base_info[8].strip()
-      item['build_structure'] = base_info[9].strip()
-      item['heating_mode'] = base_info[10].strip()
-      item['hshold_ladder_ratio'] = base_info[11].strip()
-      item['property_right_length'] = base_info[12].strip()
-      item['elevator'] = base_info[13].strip()
-      if not item['construction_year'].isdigit():
-        item['construction_year'] = "0000"
-     else:
-      logging.info("base_info NULL:%s" % response.url)
-      
-     transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//li/text()').extract()
-     if (len(transaction) > 0):
-      item['id'] = transaction[0].strip()
-      item['trans_right'] = transaction[1].strip()
-      item['list_date'] = transaction[2].strip()
-      item['house_property'] = transaction[3].strip()
-      item['trans_age'] = transaction[4].strip()
-      item['ownership_type'] = transaction[5].strip()
+        logging.error("base_info field %s not in:%s" % (span,response.url))
+        return False
+          
+    transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//li')
+    for li in transaction:
+      spans = li.xpath('./span/text()').extract()
+      span = spans[0].strip()
+      if (span in self.base_info_name_2_item_name):
+        text = li.xpath('./text()')
+        if len(text) > 0:
+          item[self.base_info_name_2_item_name[span]] = text.extract()[0].strip()
+        elif len(spans) == 2:
+          item[self.base_info_name_2_item_name[span]] = spans[1].strip()
+      else:
+        logging.error("base_info field %s not in:%s" % (span,response.url))
+        return False
+
+    return True
+    
+  def parseHousePage(self,response):
+     if not self.extractBaseInfo(response)
+        return
      
      house_title = response.xpath('.//div[@class="house-title"]/div[@class="wrapper"]')
      item['community'] = house_title.xpath('./h1/text()').extract()[0].strip().split(" ")[0]
@@ -232,46 +259,8 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
      else:
       print("%s in crawled_urls" % house_link)
   def parseHousePage(self,response):
-     item = response.meta
-     base_infos = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li')
-     base_info = []
-     for li in base_infos:
-      text = li.xpath('./text()')
-      if len(text)>0:
-        base_info.append(text.extract()[0].strip())
-      else:
-        base_info.append("")
-     if (len(base_info) == 13):
-      item['layout'] = base_info[0].strip()
-      item['floor'] = base_info[1].strip()
-      item['total_area'] = base_info[2].strip()
-      item['layout_structure'] = base_info[3].strip()
-      item['usable_area'] = base_info[4].strip()
-      item['build_type'] = base_info[5].strip()
-      item['orientation'] = base_info[6].strip()
-      item['decoration'] = base_info[7].strip()
-      item['build_structure'] = base_info[8].strip()
-      item['hshold_ladder_ratio'] = base_info[9].strip()
-      item['heating_mode'] = base_info[10].strip()
-      item['elevator'] = base_info[11].strip()
-      item['property_right_length'] = base_info[12].strip()
-     elif (len(base_info) == 10):
-      item['layout'] = base_info[0].strip()
-      item['floor'] = base_info[1].strip()
-      item['total_area'] = base_info[2].strip()
-      item['usable_area'] = base_info[3].strip()
-      item['orientation'] = base_info[4].strip()
-      item['build_structure'] = base_info[5].strip()
-      item['decoration'] = base_info[6].strip()
-      item['layout_structure'] = base_info[7].strip()
-      item['heating_mode'] = base_info[8].strip()
-      item['property_right_length'] = base_info[9].strip()
-      
-      item['build_type'] = ""
-      item['hshold_ladder_ratio'] = ""
-      item['elevator'] = ""
-     else:
-      logging.info("base_info NULL:%s" % response.url)
+     if not self.extractBaseInfo(response)
+        return
      
      construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
      div[@class="area"]/div[@class="subInfo"]/text()').extract()
