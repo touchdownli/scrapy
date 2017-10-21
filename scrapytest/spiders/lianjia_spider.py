@@ -11,7 +11,9 @@ except NameError:
   pass
 
 from datetime import datetime
+import time
 import json
+import logging
 
 class LianjiaSpider(scrapy.Spider):
   name="LianjiaSpider"
@@ -44,7 +46,13 @@ class LianjiaSpider(scrapy.Spider):
     self.file.close()
   
   def isCrawled(self, link, item):
-    return link in self.crawled_urls
+    if link in self.crawled_urls:
+      if len(self.crawled_urls[link]) > 0:
+        if item['trans_date'] <= self.crawled_urls[link][0]:
+          return True
+      else:
+        return True
+    return False
   
   def parse(self, response):
     ex = response.xpath('.//div[@class="leftContent"]//div[@class="page-box fr"]/div[@class="page-box house-lst-page-box"]/@page-data').extract()
@@ -62,8 +70,17 @@ class LianjiaSpider(scrapy.Spider):
     for box in response.xpath(self.crawl_url_xpath):
      house_link = box.xpath('.//a/@href').extract()[0]
      print("house_link:%s" % house_link)
-
-     is_crawled_success = isCrawled(house_link, item)
+     current_trans_date = box.xpath('.//div[@class="dealDate"]/text()').extract()[0]
+     try:
+      current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m.%d'))
+     except:
+      try:
+        current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m'))
+      except:
+        current_trans_date = datetime.now().strftime('%Y-%m-%d')
+     item['trans_date'] = current_trans_date
+     
+     is_crawled_success = self.isCrawled(house_link, item)
      if not is_crawled_success:
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
      else:
@@ -71,8 +88,16 @@ class LianjiaSpider(scrapy.Spider):
       
   def parseHousePage(self,response):
      item = response.meta
-     base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li/text()').extract()
-     if (len(base_info) > 0):
+     base_infos = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li')
+     base_info = []
+     for li in base_infos:
+      text = li.xpath('./text()')
+      if len(text)>0:
+        base_info.append(text.extract()[0].strip())
+      else:
+        base_info.append("")
+     
+     if (len(base_info) == 14):
       item['layout'] = base_info[0].strip()
       item['floor'] = base_info[1].strip()
       item['total_area'] = base_info[2].strip()
@@ -90,7 +115,8 @@ class LianjiaSpider(scrapy.Spider):
       if not item['construction_year'].isdigit():
         item['construction_year'] = "0000"
      else:
-      print("base_info %s is none" % response.url)
+      logging.info("base_info NULL:%s" % response.url)
+      
      transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//li/text()').extract()
      if (len(transaction) > 0):
       item['id'] = transaction[0].strip()
@@ -100,8 +126,19 @@ class LianjiaSpider(scrapy.Spider):
       item['trans_age'] = transaction[4].strip()
       item['ownership_type'] = transaction[5].strip()
      
-     house_title = response.xpath('.//div[@class="house-title"]/div[@class="wrapper"]/h1/text()').extract()[0].strip()
-     item['community'] = house_title.split(" ")[0] 
+     house_title = response.xpath('.//div[@class="house-title"]/div[@class="wrapper"]')
+     item['community'] = house_title.xpath('./h1/text()').extract()[0].strip().split(" ")[0]
+     current_trans_date = house_title.xpath('./span/text()').extract()[0].strip().split(" ")[0]
+     try:
+      current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m.%d'))
+     except:
+      try:
+        current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m'))
+      except:
+        current_trans_date = datetime.now().strftime('%Y-%m-%d')
+     item['trans_date'] = current_trans_date
+     if self.isCrawled(response.url, item):
+      return
      
      msg = response.xpath('.//div[@class="info fr"]/div[@class="msg"]/span/label/text()')
      item['list_price'] = -1
@@ -162,8 +199,8 @@ class LianjiaSpider(scrapy.Spider):
      item['district'] = agent_a[0].extract().strip()
      item['business_district'] = agent_a[1].extract().strip()
      
-     self.crawled_urls[response.url] = [trans_date]
-     self.file.write(" ".join([response.url, trans_date]) + "\n")
+     self.crawled_urls[response.url] = [current_trans_date]
+     self.file.write(" ".join([response.url, current_trans_date]) + "\n")
      return item
 
 class SecondHandSaleLianjiaSpider(LianjiaSpider):
@@ -196,8 +233,15 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
       print("%s in crawled_urls" % house_link)
   def parseHousePage(self,response):
      item = response.meta
-     base_info = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li/text()').extract()
-     if (len(base_info) > 0):
+     base_infos = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li')
+     base_info = []
+     for li in base_infos:
+      text = li.xpath('./text()')
+      if len(text)>0:
+        base_info.append(text.extract()[0].strip())
+      else:
+        base_info.append("")
+     if (len(base_info) == 13):
       item['layout'] = base_info[0].strip()
       item['floor'] = base_info[1].strip()
       item['total_area'] = base_info[2].strip()
@@ -205,15 +249,29 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
       item['usable_area'] = base_info[4].strip()
       item['build_type'] = base_info[5].strip()
       item['orientation'] = base_info[6].strip()
-      
       item['decoration'] = base_info[7].strip()
       item['build_structure'] = base_info[8].strip()
       item['hshold_ladder_ratio'] = base_info[9].strip()
       item['heating_mode'] = base_info[10].strip()
       item['elevator'] = base_info[11].strip()
       item['property_right_length'] = base_info[12].strip()
+     elif (len(base_info) == 10):
+      item['layout'] = base_info[0].strip()
+      item['floor'] = base_info[1].strip()
+      item['total_area'] = base_info[2].strip()
+      item['usable_area'] = base_info[3].strip()
+      item['orientation'] = base_info[4].strip()
+      item['build_structure'] = base_info[5].strip()
+      item['decoration'] = base_info[6].strip()
+      item['layout_structure'] = base_info[7].strip()
+      item['heating_mode'] = base_info[8].strip()
+      item['property_right_length'] = base_info[9].strip()
+      
+      item['build_type'] = ""
+      item['hshold_ladder_ratio'] = ""
+      item['elevator'] = ""
      else:
-      print("base_info %s is none" % response.url)
+      logging.info("base_info NULL:%s" % response.url)
      
      construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
      div[@class="area"]/div[@class="subInfo"]/text()').extract()

@@ -14,7 +14,6 @@ BOT_NAME = 'scrapytest'
 SPIDER_MODULES = ['scrapytest.spiders']
 NEWSPIDER_MODULE = 'scrapytest.spiders'
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'scrapytest (+http://www.yourdomain.com)'
 
