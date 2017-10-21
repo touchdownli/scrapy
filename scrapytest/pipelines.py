@@ -100,31 +100,42 @@ class MySQLLianjiaPipeline(object):
         item['community'],item['district'],item['business_district'],
         item['crawl_unit'],item['city'])
         )
+        
+    def insert_trans_history(self, item):
+      trans_history = item['trans_history']
+      for (trans_date,trans_info) in trans_history.items():
+        self.cursor.execute("insert into trans_history(\
+        id,trans_price,trans_date,\
+        list_price,list_date,trans_age,\
+        price_adjustment_times,visit_times,follow_times,\
+        view_times) \
+        values(\
+        %s,%s,%s,\
+        %s,%s,%s,\
+        %s,%s,%s,\
+        %s)",
+        (item['id'], trans_info['trans_price'], trans_date,
+         trans_info['list_price'],trans_info['list_date'],trans_info['trans_age'],
+         trans_info['price_adjustment_times'],trans_info['visit_times'],trans_info['follow_times'],
+         trans_info['view_times']))
+         
     #pipeline默认调用
     def process_item(self, item, spider):
-        try:
-            insert_lianjian_house(item)
-            # trans history
-            trans_history = item['trans_history']
-            for (trans_date,trans_info) in trans_history.items():
-              self.cursor.execute("insert into trans_history(\
-              id,trans_price,trans_date,\
-              list_price,list_date,trans_age,\
-              price_adjustment_times,visit_times,follow_times,\
-              view_times) \
-              values(\
-              %s,%s,%s,\
-              %s,%s,%s,\
-              %s,%s,%s,\
-              %s)",
-              (item['id'], trans_info['trans_price'], trans_date,
-               trans_info['list_price'],trans_info['list_date'],trans_info['trans_age'],
-               trans_info['price_adjustment_times'],trans_info['visit_times'],trans_info['follow_times'],
-               trans_info['view_times']))
-            self.conn.commit()
-        except pymysql.InternalError as e:
-            print("Error %d: %s" % (e.args[0], e.args[1]))
+      if spider.name != "LianjiaSpider":
         return item
+      try:
+          self.insert_lianjian_house(item)
+          self.insert_trans_history(item)
+          self.conn.commit()
+      except Exception as e:
+          print("Error %d: %s" % (e.args[0], e.args[1]))
+          try:
+            # trans history
+            self.insert_trans_history(item)
+            self.conn.commit()
+          except Exception as e:
+            print("Error %d: %s" % (e.args[0], e.args[1]))
+      return item
             
     #异常处理
     def _handle_error(self, failue, item, spider):
@@ -136,29 +147,42 @@ class MySQLLianjiaPipeline(object):
     def close_spider(self, spider):
         pass
 class MySQLSecondHandSaleLianjiaPipeline(MySQLLianjiaPipeline):
+    def insert_sale_info(self, item):
+      self.cursor.execute("insert into second_hand_house_sale_info(\
+      id,list_date,last_trans_date,\
+      trans_age,mortgage,certicate) \
+      values(\
+      %s,%s,%s,\
+      %s,%s,%s)",
+      (item['id'],item['list_date'],item['last_trans_date'],
+      item['trans_age'],item['mortgage'],item['certicate']))
+    def insert_price_info(self, item):
+      self.cursor.execute("insert into second_hand_house_price_info(\
+      id,list_price,crawl_date,\
+      visit_times,follow_times) \
+      values(\
+      %s,%s,%s,\
+      %s,%s)",
+      (item['id'],item['list_price'],item['crawl_date'],
+      item['visit_times'],item['follow_times']))
     def process_item(self, item, spider):
-        try:
-            self.insert_lianjian_house(item)
-
-            self.cursor.execute("insert into second_hand_house_sale_info(\
-            id,list_date,last_trans_date,\
-            trans_age,mortgage,certicate) \
-            values(\
-            %s,%s,%s,\
-            %s,%s,%s)",
-            (item['id'],item['list_date'],item['last_trans_date'],
-            item['trans_age'],item['mortgage'],item['certicate']))
-             
-            self.cursor.execute("insert into second_hand_house_price_info(\
-            id,list_price,crawl_date,\
-            visit_times,follow_times) \
-            values(\
-            %s,%s,%s,\
-            %s,%s)",
-            (item['id'],item['list_price'],item['crawl_date'],
-            item['visit_times'],item['follow_times']))
-            
-            self.conn.commit()
-        except pymysql.InternalError as e:
-            print("Error %d: %s" % (e.args[0], e.args[1]))
+      if spider.name != "SecondHandSaleLianjiaSpider":
         return item
+      try:
+          self.insert_lianjian_house(item)
+          self.conn.commit()
+      except Exception as e:
+          print("Error %d: %s" % (e.args[0], e.args[1]))
+          
+      try:
+          self.insert_sale_info(item)
+          self.conn.commit()
+      except Exception as e:
+          print("Error %d: %s" % (e.args[0], e.args[1]))
+          
+      try:
+          self.insert_price_info(item)
+          self.conn.commit()
+      except Exception as e:
+          print("Error %d: %s" % (e.args[0], e.args[1]))          
+      return item
