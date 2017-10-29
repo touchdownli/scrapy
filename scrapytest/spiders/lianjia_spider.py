@@ -36,6 +36,7 @@ class LianjiaSpider(scrapy.Spider):
   '别墅类型':'build_type',
   '房屋朝向':'orientation',
   '建筑年代':'construction_year',
+  '建成年代':'construction_year',
   '装修情况':'decoration',
   '建筑结构':'build_structure',
   '供暖方式':'heating_mode',
@@ -119,10 +120,12 @@ class LianjiaSpider(scrapy.Spider):
   
   def extractBaseInfo(self,response):
     item = response.meta
-    
     for field in self.base_info_name_2_item_name.values():
       item[field] = ""
       
+    house_link = response.url
+    item['id'] = house_link[house_link.rfind("/")+1:].split(".")[0]
+    
     base_infos = response.xpath('.//div[@class="introContent"]/div[@class="base"]//li')
     for li in base_infos:
       span = li.xpath('./span/text()').extract()[0].strip()
@@ -145,9 +148,16 @@ class LianjiaSpider(scrapy.Spider):
         elif len(spans) == 2:
           item[self.base_info_name_2_item_name[span]] = spans[1].strip()
       else:
-        logging.error("base_info field %s not in:%s" % (span,response.url))
-        return False
+        logging.error("base_info field %s not in defined fields:%s" % (span,response.url))
 
+    #value type confirm
+    if not item['construction_year'].isdigit():
+      item['construction_year'] = '0000'
+    
+    try:
+      time.strptime(item['last_trans_date'],'%Y-%m-%d')
+    except:
+      item['last_trans_date'] = '1970-01-01'
     return True
     
   def parseHousePage(self,response):
@@ -215,6 +225,10 @@ class LianjiaSpider(scrapy.Spider):
       item['trans_history'][trans_date]['view_times'] = -1
       if (i==0):
        item['trans_history'][trans_date]['list_price'] = item['list_price']
+       try:
+        time.strptime(item['list_date'],'%Y-%m-%d')
+       except:
+        item['list_date'] = "1970-01-01"
        item['trans_history'][trans_date]['list_date'] = item['list_date']
        item['trans_history'][trans_date]['trans_age'] = item['trans_age']
        item['trans_history'][trans_date]['price_adjustment_times'] = item['price_adjustment_times']
@@ -224,8 +238,12 @@ class LianjiaSpider(scrapy.Spider):
       i += 1
      
      agent_a = response.xpath('.//div[@class="agent-box"]/div[@class="myAgent"]/div[@class="name"]/a/text()')
-     item['district'] = agent_a[0].extract().strip()
-     item['business_district'] = agent_a[1].extract().strip()
+     try:
+      item['district'] = agent_a[0].extract().strip()
+      item['business_district'] = agent_a[1].extract().strip()
+     except:
+      item['district'] = item['crawl_unit']
+      item['business_district'] = ""
      
      self.crawled_urls[response.url] = [current_trans_date]
      self.file.write(" ".join([response.url, current_trans_date]) + "\n")
@@ -263,8 +281,7 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
         return
      
      item = response.meta
-     house_link = response.url
-     item['id'] = house_link[house_link.rfind("/")+1:].split(".")[0]
+
      construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
      div[@class="area"]/div[@class="subInfo"]/text()').extract()
      item['construction_year'] = construction_year[0].split("年")[0]
