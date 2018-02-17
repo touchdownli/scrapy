@@ -1,7 +1,20 @@
 import os
 import sys
 import time
-
+import urllib.request
+from lxml import etree as etree
+def wget(city):
+  city_base_url = "https://%s.lianjia.com/ershoufang"
+  response = urllib.request.urlopen(city_base_url % city)
+  html = response.read()
+  html_src = etree.HTML(html)
+  hrefs = html_src.findall('.//div[@class="position"]//div[@data-role="ershoufang"]//a')
+  crawl_units = []
+  for href in hrefs:
+    crawl_unit = href.get("href").split("/")[-2]
+    crawl_units.append(crawl_unit)
+  return crawl_units
+  
 def craw(city, crawl_unit):
   while True:
     os.system("scrapy crawl --logfile=%s.log -L INFO %s -a city=%s -a crawl_unit=%s" % (spider,spider,city,crawl_unit))
@@ -11,6 +24,7 @@ def craw(city, crawl_unit):
     arr = continue_status.split(":")
     if (len(arr) > 1 and arr[1] == "False"):
       break
+
 if __name__ == '__main__':
   city_crawl_units = {'bj':['dongcheng','xicheng','chaoyang','haidian','fengtai','shijingshan','tongzhou','changping','daxing',
     'yizhuangkaifaqu','shunyi','fangshan','mentougou','pinggu','huairou','miyun','yanqing'],
@@ -20,19 +34,26 @@ if __name__ == '__main__':
   'cq':['jiangbei','yubei','nanan','banan','shapingba','jiulongpo','yuzhong','dadukou','jiangjing'],
   'sz':['luohuqu','futianqu','nanshanqu','yantianqu','baoanqu','longgangqu',
     'longhuaqu','guangmingxinqu','pingshanqu','dapengxinqu'],
-  'nj':['gulou','jianye','qinhuai','xuanwu','yuhuatai','qixia','jiangning','pukou','liuhe','lishui','gaochun']}
-  #city_crawl_units = {'bj':['yizhuangkaifaqu','mentougou','huairou','yanqing'],'lf':['yanjiao','xianghe']}
+  'nj':['gulou','jianye','qinhuai','xuanwu','yuhuatai','qixia','jiangning','pukou','liuhe','lishui','gaochun'],
+  'hz':['xihu','xiacheng','jianggan','gongshu','shangcheng','binjiang','yuhang','xiaoshan','xiasha'],
+  'gz':['tianhe','yuexiu','liwan','haizhu','panyu','baiyun','huangpugz','conghua','zengcheng','huadou','nansha'],
+  'xa':['beilin','weiyang','baqiao','xinchengqu','lintong','yanliang','changan4','lianhu','yanta','lantian','huxian','zhouzhi','gaoling1','xixianxinqu']}
   spiders = ['LianjiaSpider','SecondHandSaleLianjiaSpider']
+  focus_cities = ['bj','lf','cd','cq','nj','sz','hz','gz','xa']
+  other_cities = ['wh','xm','zh','tj','zz','jn','dl','qd']
+  total_cities = focus_cities + other_cities
+  city_map = {"total":total_cities,"focus":focus_cities,"other":other_cities}
+  city_group = total_cities
   if (len(sys.argv) > 1):
-    for spider in spiders:
-      city = sys.argv[1]
+    city_group = city_map.get(sys.argv[1])
+  if not city_group:
+    print("city_group param error %s" % sys.argv[1])
+    exit(0)
+  for city in city_group:
+    if city in city_crawl_units:
       crawl_units = city_crawl_units[city]
+    else:
+      crawl_units = wget(city)
+    for spider in spiders:
       for crawl_unit in crawl_units:
         craw(city, crawl_unit)
-  else:
-    for spider in spiders:
-      for city,crawl_units in city_crawl_units.items():
-        for crawl_unit in crawl_units:
-          craw(city, crawl_unit)
-
-      

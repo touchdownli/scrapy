@@ -41,7 +41,7 @@ alter table second_hand_house_sale_info change column id id varchar(32) NOT NULL
 alter table second_hand_house_sale_info change column list_date list_date date NOT NULL DEFAULT '1970-01-01' COMMENT '挂牌日期';
 alter table second_hand_house_sale_info change column last_trans_date last_trans_date date NOT NULL DEFAULT '1970-01-01' COMMENT '上次交易';
 alter table second_hand_house_sale_info change column trans_age trans_age varchar(32) NOT NULL DEFAULT '' COMMENT '成交满几年';
-alter table second_hand_house_sale_info change column mortgage mortgage  varchar(32) NOT NULL DEFAULT '' COMMENT '抵押信息';
+alter table second_hand_house_sale_info change column mortgage mortgage  varchar(1024) NOT NULL DEFAULT '' COMMENT '抵押信息';
 alter table second_hand_house_sale_info change column certicate certicate varchar(32) NOT NULL DEFAULT '' COMMENT '房本备件';
 
 alter table second_hand_house_price_info change column id id varchar(32) NOT NULL COMMENT '';

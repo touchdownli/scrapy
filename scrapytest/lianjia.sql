@@ -51,7 +51,7 @@ CREATE TABLE `second_hand_house_sale_info` (
   `list_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '挂牌日期',
   `last_trans_date` date NOT NULL DEFAULT '1970-01-01' COMMENT '上次交易',
   `trans_age` varchar(32) NOT NULL DEFAULT '' COMMENT '成交满几年',
-  `mortgage`  varchar(32) NOT NULL DEFAULT '' COMMENT '抵押信息',
+  `mortgage`  varchar(1024) NOT NULL DEFAULT '' COMMENT '抵押信息',
   `certicate` varchar(32) NOT NULL DEFAULT '' COMMENT '房本备件',
   PRIMARY KEY (`id`,`list_date`)
 ) ENGINE = MyISAM DEFAULT CHARSET = utf8;

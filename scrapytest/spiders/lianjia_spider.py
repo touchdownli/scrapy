@@ -88,8 +88,12 @@ class LianjiaSpider(scrapy.Spider):
   
   def parse(self, response):
     ex = response.xpath('.//div[@class="leftContent"]//div[@class="page-box fr"]/div[@class="page-box house-lst-page-box"]/@page-data').extract()
-    page_data = json.loads(ex[0])
-    totalPage = page_data['totalPage']
+    totalPage = 1
+    try:
+      page_data = json.loads(ex[0])
+      totalPage = page_data['totalPage']
+    except:
+      pass
     for i in range(1,totalPage + 1):
       pg_link = self.base_url + str(i) + "/"
       yield scrapy.Request(pg_link,callback=self.parseHouseList)
@@ -284,7 +288,11 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
 
      construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
      div[@class="area"]/div[@class="subInfo"]/text()').extract()
-     item['construction_year'] = construction_year[0].split("年")[0]
+     item['construction_year'] = "0000"
+     try:
+      item['construction_year'] = construction_year[0].split("年")[0]
+     except:
+      pass
      if not item['construction_year'].isdigit():
         item['construction_year'] = "0000"
      
