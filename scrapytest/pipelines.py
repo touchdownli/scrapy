@@ -131,10 +131,10 @@ class MySQLLianjiaPipeline(object):
         return item
       try:
           self.insert_lianjian_house(item)
-          self.insert_trans_history(item)
+          #self.insert_trans_history(item)
           self.conn.commit()
       except Exception as e:
-          logging.error("sql: %s item:%s" % (e,item))
+          logging.error("insert_lianjian_house: %s item:%s" % (e,item))
           try:
             # trans history
             self.insert_trans_history(item)
@@ -178,17 +178,17 @@ class MySQLSecondHandSaleLianjiaPipeline(MySQLLianjiaPipeline):
           self.insert_lianjian_house(item)
           self.conn.commit()
       except Exception as e:
-          logging.error("Error: %s" % (e))
+          logging.error("insert_lianjian_house: %s" % (e))
           
       try:
           self.insert_sale_info(item)
           self.conn.commit()
       except Exception as e:
-          logging.error("Error: %s" % (e))
+          logging.error("insert_sale_info: %s" % (e))
           
       try:
           self.insert_price_info(item)
           self.conn.commit()
       except Exception as e:
-          logging.error("Error: %s" % (e))          
+          logging.error("insert_price_info: %s" % (e))          
       return item
