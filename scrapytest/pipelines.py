@@ -130,17 +130,16 @@ class MySQLLianjiaPipeline(object):
       if spider.name != "LianjiaSpider":
         return item
       try:
-          self.insert_lianjian_house(item)
-          #self.insert_trans_history(item)
-          self.conn.commit()
+        self.insert_lianjian_house(item)
+        self.conn.commit()
       except Exception as e:
-          logging.error("insert_lianjian_house: %s item:%s" % (e,item))
-          try:
-            # trans history
-            self.insert_trans_history(item)
-            self.conn.commit()
-          except Exception as e:
-            logging.error("insert_trans_history: %s" % (e))
+        logging.error("insert_lianjian_house: %s item:%s" % (e,item))
+      try:
+        # trans history
+        self.insert_trans_history(item)
+        self.conn.commit()
+      except Exception as e:
+        logging.error("insert_trans_history: %s item:%s" % (e, item))
       return item
             
     #异常处理
