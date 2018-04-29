@@ -44,8 +44,14 @@ if __name__ == '__main__':
   total_cities = focus_cities + other_cities
   city_map = {"total":total_cities,"focus":focus_cities,"other":other_cities}
   city_group = total_cities
+  if len(sys.argv) == 1:
+    print("Usage:python main_scrapy_run.py total|focus|other [trans]")
+    exit(0)
   if (len(sys.argv) > 1):
     city_group = city_map.get(sys.argv[1])
+  if (len(sys.argv) > 2):
+    if (sys.argv[2] == "trans"):
+      spiders = ['LianjiaSpider']
   if not city_group:
     print("city_group param error %s" % sys.argv[1])
     exit(0)

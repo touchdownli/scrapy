@@ -16,6 +16,7 @@ class ScrapytestPipeline(object):
         #打开文件
         self.file = open('data.json', 'w')
         self.file = codecs.open('data.json', 'w', encoding='utf-8')
+        logging.basicConfig(format="%(asctime)s %(funcName)s %(lineno)d %(levelname)s %(message)s")
     # #该方法用于处理数据
     def process_item(self, item, spider):
         ##读取item中的数据
@@ -73,6 +74,7 @@ class MySQLLianjiaPipeline(object):
         db="scrapy",
         charset="utf8")
         self.cursor = self.conn.cursor()
+        #logging.basicConfig(format="%(asctime)s %(name)s %(funcName)s:%(lineno)d %(levelname)s %(message)s")
 
     def insert_lianjian_house(self, item):
         self.cursor.execute("\
@@ -132,13 +134,13 @@ class MySQLLianjiaPipeline(object):
           self.insert_trans_history(item)
           self.conn.commit()
       except Exception as e:
-          logging.error("Error: %s" % (e))
+          logging.error("sql: %s item:%s" % (e,item))
           try:
             # trans history
             self.insert_trans_history(item)
             self.conn.commit()
           except Exception as e:
-            logging.error("Error: %s" % (e))
+            logging.error("insert_trans_history: %s" % (e))
       return item
             
     #异常处理

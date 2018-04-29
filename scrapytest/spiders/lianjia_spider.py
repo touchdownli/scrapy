@@ -10,7 +10,7 @@ try:
 except NameError:
   pass
 
-from datetime import datetime
+from datetime import datetime,timedelta
 import time
 import json
 import logging
@@ -59,12 +59,17 @@ class LianjiaSpider(scrapy.Spider):
 
   def __init__(self, city="bj", crawl_unit="dongcheng", *args, **kwargs):
     super(scrapy.Spider, self).__init__(*args, **kwargs)
+    #logging.basicConfig(format="%(asctime)s %(name)s %(funcName)s:%(lineno)d %(levelname)s %(message)s")
     self.base_url = self.base_url_pattern % (city, crawl_unit)
     self.city = city
     self.crawl_unit = crawl_unit
     self.start_urls = [self.base_url + "1/"]
     self.file = open(self.crawled_urls_txt_name % (crawl_unit,city), "a+")
     self.file.seek(0)
+    
+    self.total_pages_ = 0
+    self.page_index_ = 0
+    
     for x in self.file.readlines():
       cols = x.strip().split(" ")
       if (len(cols) > 1):
@@ -94,7 +99,10 @@ class LianjiaSpider(scrapy.Spider):
       totalPage = page_data['totalPage']
     except:
       pass
-    for i in range(1,totalPage + 1):
+    
+    self.total_pages_ = totalPage
+    self.page_index_ = 1
+    for i in range(1,1 + 1):
       pg_link = self.base_url + str(i) + "/"
       yield scrapy.Request(pg_link,callback=self.parseHouseList)
       
@@ -103,25 +111,38 @@ class LianjiaSpider(scrapy.Spider):
     item['city'] = self.city
     item['crawl_unit'] = self.crawl_unit
     print("****",response.url)
+    now_date = datetime.now()
+    min_date = now_date
     for box in response.xpath(self.crawl_url_xpath):
      house_link = box.xpath('.//a/@href').extract()[0]
-     print("house_link:%s" % house_link)
+     print("parse house_link list:%s" % house_link)
+     community = box.xpath('.//a/text()').extract()[0].strip().split(" ")[0]
      current_trans_date = box.xpath('.//div[@class="dealDate"]/text()').extract()[0]
      try:
-      current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m.%d'))
+      current_trans_date = datetime.strptime(current_trans_date,'%Y.%m.%d')
      except:
       try:
-        current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m'))
+        current_trans_date = datetime.strptime(current_trans_date,'%Y.%m')
       except:
-        current_trans_date = datetime.now().strftime('%Y-%m-%d')
-     item['trans_date'] = current_trans_date
+        current_trans_date = now_date
      
+     if min_date > current_trans_date:
+      min_date = current_trans_date
+      
+     item['trans_date'] = datetime.strftime(current_trans_date, '%Y-%m-%d')
+     item['community'] = community
      is_crawled_success = self.isCrawled(house_link, item)
      if not is_crawled_success:
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
      else:
       print("%s in crawled_urls" % house_link)
-  
+    if now_date - min_date < timedelta(days=30):
+      self.page_index_ += self.page_index_
+      if (self.page_index_ <= self.total_pages_):
+        pg_link = self.base_url + str(self.page_index_) + "/"
+        print("%s crawl house list" % pg_link)
+        yield scrapy.Request(pg_link,callback=self.parseHouseList)
+      
   def extractBaseInfo(self,response):
     item = response.meta
     for field in self.base_info_name_2_item_name.values():
@@ -139,7 +160,7 @@ class LianjiaSpider(scrapy.Spider):
           item[self.base_info_name_2_item_name[span]] = text.extract()[0].strip()
       else:
         logging.error("base_info field %s not in:%s" % (span,response.url))
-        return False
+        #return False
           
     transaction = response.xpath('.//div[@class="introContent"]/div[@class="transaction"]//li')
     for li in transaction:
@@ -147,10 +168,10 @@ class LianjiaSpider(scrapy.Spider):
       span = spans[0].strip()
       if (span in self.base_info_name_2_item_name):
         text = li.xpath('./text()')
-        if len(text) > 0:
-          item[self.base_info_name_2_item_name[span]] = text.extract()[0].strip()
-        elif len(spans) == 2:
+        if len(spans) == 2:
           item[self.base_info_name_2_item_name[span]] = spans[1].strip()
+        elif len(text) > 0:
+          item[self.base_info_name_2_item_name[span]] = text.extract()[0].strip()
       else:
         logging.error("base_info field %s not in defined fields:%s" % (span,response.url))
 
@@ -168,8 +189,12 @@ class LianjiaSpider(scrapy.Spider):
      if not self.extractBaseInfo(response):
         return
      item = response.meta
-     house_title = response.xpath('.//div[@class="house-title"]/div[@class="wrapper"]')
-     item['community'] = house_title.xpath('./h1/text()').extract()[0].strip().split(" ")[0]
+     '''
+     house_title = response.xpath('.//div[@class="house-title"]/')
+     community = house_title.extract()
+     print("com:%s" % community)
+     item['community'] = community[0].strip().split(" ")[0]
+     
      current_trans_date = house_title.xpath('./span/text()').extract()[0].strip().split(" ")[0]
      try:
       current_trans_date = time.strftime("%Y-%m-%d",time.strptime(current_trans_date,'%Y.%m.%d'))
@@ -181,7 +206,9 @@ class LianjiaSpider(scrapy.Spider):
      item['trans_date'] = current_trans_date
      if self.isCrawled(response.url, item):
       return
-     
+    '''
+     current_trans_date = item['trans_date']
+
      msg = response.xpath('.//div[@class="info fr"]/div[@class="msg"]/span/label/text()')
      item['list_price'] = -1
      item['price_adjustment_times'] = -1
@@ -244,10 +271,12 @@ class LianjiaSpider(scrapy.Spider):
      agent_a = response.xpath('.//div[@class="agent-box"]/div[@class="myAgent"]/div[@class="name"]/a/text()')
      try:
       item['district'] = agent_a[0].extract().strip()
+     except:
+      pass
+     try:
       item['business_district'] = agent_a[1].extract().strip()
      except:
-      item['district'] = item['crawl_unit']
-      item['business_district'] = ""
+      pass
      
      self.crawled_urls[response.url] = [current_trans_date]
      self.file.write(" ".join([response.url, current_trans_date]) + "\n")
@@ -304,6 +333,7 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
      
      area = response.xpath('.//div[@class="overview"]/div[@class="content"]//\
      div[@class="areaName"]/span[@class="info"]/a/text()').extract()
+     #area = response.xpath('.//div[@class="myAgent"]/div[@class="name"]/a/text()').extract()
      item['business_district'] = area[1].strip()
      item['district'] = area[0].strip()
      

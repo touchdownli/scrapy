@@ -11,6 +11,8 @@
 
 BOT_NAME = 'scrapytest'
 
+LOG_FORMAT = '%(asctime)s %(name)s %(funcName)s:%(lineno)d %(levelname)s %(message)s'
+
 SPIDER_MODULES = ['scrapytest.spiders']
 NEWSPIDER_MODULE = 'scrapytest.spiders'
 
