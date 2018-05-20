@@ -115,7 +115,7 @@ class LianjiaSpider(scrapy.Spider):
     min_date = now_date
     for box in response.xpath(self.crawl_url_xpath):
      house_link = box.xpath('.//a/@href').extract()[0]
-     print("parse house_link list:%s" % house_link)
+     print("parseHouseList:%s" % house_link)
      community = box.xpath('.//a/text()').extract()[0].strip().split(" ")[0]
      current_trans_date = box.xpath('.//div[@class="dealDate"]/text()').extract()[0]
      try:
@@ -136,8 +136,8 @@ class LianjiaSpider(scrapy.Spider):
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
      else:
       print("%s in crawled_urls" % house_link)
-    if now_date - min_date < timedelta(days=30):
-      self.page_index_ += self.page_index_
+    if now_date - min_date < timedelta(days=60):
+      self.page_index_ += 1
       if (self.page_index_ <= self.total_pages_):
         pg_link = self.base_url + str(self.page_index_) + "/"
         print("%s crawl house list" % pg_link)
@@ -299,16 +299,24 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
     item['city'] = self.city
     item['crawl_unit'] = self.crawl_unit
     item['crawl_date'] = datetime.now().strftime('%Y-%m-%d')
-    print("****",response.url)
-    for box in response.xpath(self.crawl_url_xpath):
+    url_boxs = response.xpath(self.crawl_url_xpath)
+    print("response:%s,url cnt:%d" % (response.url,len(url_boxs)))
+    for box in url_boxs:
      house_link = box.xpath('.//a/@href').extract()[0]
-     print("house_link:%s" % house_link)
+     print("parseHouseList:%s" % house_link)
      item['list_price'] = box.xpath('.//div[@class="totalPrice"]/span/text()').extract()[0]
      is_crawled_success = self.isCrawled(house_link, item)
      if not is_crawled_success:
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
      else:
       print("%s in crawled_urls" % house_link)
+    if self.page_index_ < 50:
+      self.page_index_ += 1
+      if (self.page_index_ <= self.total_pages_):
+        pg_link = self.base_url + str(self.page_index_) + "/"
+        print("request:%s" % pg_link)
+        yield scrapy.Request(pg_link,callback=self.parseHouseList)
+        
   def parseHousePage(self,response):
      if not self.extractBaseInfo(response):
         return

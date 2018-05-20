@@ -18,7 +18,9 @@ def wget(city):
 def craw(city, crawl_unit):
   while True:
     os.system("scrapy crawl --logfile=%s.log -L INFO %s -a city=%s -a crawl_unit=%s" % (spider,spider,city,crawl_unit))
-    continue_status = open("tmp_continue_crawl_cmd", 'r').readline().strip()
+    f = open("tmp_continue_crawl_cmd", 'r')
+    continue_status = f.readline().strip()
+    f.close()
     print("******%s" % continue_status)
     time.sleep(5)
     arr = continue_status.split(":")
@@ -39,19 +41,21 @@ if __name__ == '__main__':
   'gz':['tianhe','yuexiu','liwan','haizhu','panyu','baiyun','huangpugz','conghua','zengcheng','huadou','nansha'],
   'xa':['beilin','weiyang','baqiao','xinchengqu','lintong','yanliang','changan4','lianhu','yanta','lantian','huxian','zhouzhi','gaoling1','xixianxinqu']}
   spiders = ['LianjiaSpider','SecondHandSaleLianjiaSpider']
-  focus_cities = ['bj','lf','cd','cq','nj','sz','hz','gz','xa']
-  other_cities = ['wh','xm','zh','tj','zz','jn','dl','qd']
+  focus_cities = ['bj','lf','cd','nj','sz','hz','gz','xa']
+  other_cities = ['wh','xm','zh','tj','zz','jn','dl','qd','cq']
   total_cities = focus_cities + other_cities
   city_map = {"total":total_cities,"focus":focus_cities,"other":other_cities}
   city_group = total_cities
   if len(sys.argv) == 1:
-    print("Usage:python main_scrapy_run.py total|focus|other [trans]")
+    print("Usage:python main_scrapy_run.py [total|'city' [trans|second]]")
     exit(0)
-  if (len(sys.argv) > 1):
-    city_group = city_map.get(sys.argv[1])
+  if (len(sys.argv) > 1 and sys.argv[1] != 'total'):
+    city_group = [sys.argv[1]]
   if (len(sys.argv) > 2):
     if (sys.argv[2] == "trans"):
       spiders = ['LianjiaSpider']
+    elif (sys.argv[2] == "second"):
+      spiders = ['SecondHandSaleLianjiaSpider']
   if not city_group:
     print("city_group param error %s" % sys.argv[1])
     exit(0)
