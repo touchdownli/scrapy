@@ -287,7 +287,7 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
   #bj.lianjia.com/ershoufang/chaoyang/
   base_url_pattern = 'https://%s.lianjia.com/ershoufang/%s/pg'
   crawled_urls_txt_name = "%s_%s_second_house_sale_crawled_urls.txt"
-  crawl_url_xpath = './/div[@class="leftContent"]/ul[@class="sellListContent"]/li'
+  crawl_url_xpath = './/div[@class="leftContent"]/ul[@class="sellListContent"]//li'
   def isCrawled(self, link, item):
     if link in self.crawled_urls:
       if item['list_price'] == self.crawled_urls[link][0]:
@@ -299,6 +299,7 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
     item['city'] = self.city
     item['crawl_unit'] = self.crawl_unit
     item['crawl_date'] = datetime.now().strftime('%Y-%m-%d')
+    #logging.info(response.text)
     url_boxs = response.xpath(self.crawl_url_xpath)
     print("response:%s,url cnt:%d" % (response.url,len(url_boxs)))
     for box in url_boxs:
