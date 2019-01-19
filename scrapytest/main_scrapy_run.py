@@ -28,9 +28,11 @@ def craw(city, crawl_unit):
       break
 
 if __name__ == '__main__':
-  city_crawl_units = {'bj':['dongcheng','xicheng','chaoyang','haidian','fengtai','shijingshan','tongzhou','changping','daxing',
+  city_crawl_units = {
+  'bj':['dongcheng','xicheng','chaoyang','haidian','fengtai','shijingshan','tongzhou','changping','daxing',
     'yizhuangkaifaqu','shunyi','fangshan','mentougou','pinggu','huairou','miyun','yanqing'],
-  'lf':['yanjiao','xianghe'],
+  #'bj':['huairou'],
+  #'lf':['yanjiao','xianghe'],
   'cd':['jinjiang','qingyang','wuhou','gaoxin7','chenghua','jinniu','tianfuxinqu',
     'gaoxinxi1','shuangliu','wenjiang','pidou','longquanyi','xindou'],
   'cq':['jiangbei','yubei','nanan','banan','shapingba','jiulongpo','yuzhong','dadukou','jiangjing'],
