@@ -86,7 +86,7 @@ class MySQLLianjiaPipeline(object):
         water_type,electric_type,gas_price,\
         trans_right,house_property,ownership_type,\
         community,district,business_district,\
-        crawl_unit,city) \
+        crawl_unit,city,rent_area) \
         values(%s, %s, %s, \
           %s, %s, %s,\
           %s, %s, %s, \
@@ -95,7 +95,7 @@ class MySQLLianjiaPipeline(object):
           %s, %s, %s, \
           %s, %s, %s, \
           %s, %s, %s, \
-          %s,%s)",
+          %s, %s, %s)",
         (item['id'], item['layout'], item['floor'],
         item['total_area'], item['layout_structure'], item['usable_area'],
         item['build_type'], item['orientation'], item['construction_year'],
@@ -104,7 +104,7 @@ class MySQLLianjiaPipeline(object):
         item['water_type'], item['electric_type'], item['gas_price'],
         item['trans_right'], item['house_property'],item['ownership_type'],
         item['community'],item['district'],item['business_district'],
-        item['crawl_unit'],item['city'])
+        item['crawl_unit'],item['city'],item['rent_area'])
         )
         
     def insert_trans_history(self, item):
@@ -164,12 +164,15 @@ class MySQLSecondHandSaleLianjiaPipeline(MySQLLianjiaPipeline):
     def insert_price_info(self, item):
       self.cursor.execute("insert into second_hand_house_price_info(\
       id,list_price,crawl_date,\
-      visit_times,follow_times) \
+      visit_times,follow_times, \
+      visit_times_7,visit_times_30) \
       values(\
       %s,%s,%s,\
+      %s,%s,\
       %s,%s)",
       (item['id'],item['list_price'],item['crawl_date'],
-      item['visit_times'],item['follow_times']))
+      item['visit_times'],item['follow_times'],
+      item['visit_times_7'],item['visit_times_30']))
     def process_item(self, item, spider):
       if spider.name != "SecondHandSaleLianjiaSpider":
         return item

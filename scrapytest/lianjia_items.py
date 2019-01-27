@@ -5,6 +5,7 @@ class LianjiaItem(scrapy.Item):
     layout=scrapy.Field()
     floor=scrapy.Field()
     total_area=scrapy.Field()
+    rent_area=scrapy.Field()
     layout_structure=scrapy.Field()
     usable_area=scrapy.Field()
     build_type=scrapy.Field()
@@ -29,6 +30,8 @@ class LianjiaItem(scrapy.Item):
     list_price=scrapy.Field()
     price_adjustment_times=scrapy.Field()
     visit_times=scrapy.Field()
+    visit_times_7=scrapy.Field()
+    visit_times_30=scrapy.Field()
     follow_times=scrapy.Field()
     view_times=scrapy.Field()
     

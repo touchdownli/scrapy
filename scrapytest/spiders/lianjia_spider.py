@@ -31,6 +31,7 @@ class LianjiaSpider(scrapy.Spider):
   '房屋户型':'layout',
   '所在楼层':'floor',
   '建筑面积':'total_area',
+  '计租面积':'rent_area',
   '户型结构':'layout_structure',
   '套内面积':'usable_area',
   '建筑类型':'build_type',
@@ -151,6 +152,7 @@ class LianjiaSpider(scrapy.Spider):
     item = response.meta
     for field in self.base_info_name_2_item_name.values():
       item[field] = ""
+    item["rent_area"] = "-1"
       
     house_link = response.url
     item['id'] = house_link[house_link.rfind("/")+1:].split(".")[0]
@@ -187,6 +189,14 @@ class LianjiaSpider(scrapy.Spider):
       time.strptime(item['last_trans_date'],'%Y-%m-%d')
     except:
       item['last_trans_date'] = '1970-01-01'
+      
+    try:
+      time.strptime(item['list_date'],'%Y-%m-%d')
+    except:
+      try:
+        item['list_date'] = time.strftime("%Y-%m-%d",time.strptime(item['list_date'],'%Y年%m月%d日'))
+      except:
+        item['list_date'] = '1970-01-01'
     return True
     
   def parseHousePage(self,response):
@@ -223,22 +233,40 @@ class LianjiaSpider(scrapy.Spider):
       print("Info no msg for %s" % response.url)
      else:
       try:
-        item['list_price'] = float(msg[0].extract())
-        item['price_adjustment_times'] = int(msg[2].extract())
-        item['visit_times'] = int(msg[3].extract())
-        item['follow_times'] = int(msg[4].extract())
-        item['view_times'] = int(msg[5].extract())
+        item['list_price'] = float(msg[0].extract().strip("\"").strip())
       except:
+        logging.error("info fr error:url:%s,list_price:%s" % (response.url, msg[0].extract()))
+        pass
+      try:
+        item['price_adjustment_times'] = int(msg[2].extract())
+      except:
+        logging.error("info fr error:%s" % msg[2].extract())
+        pass
+      try:
+        item['visit_times'] = int(msg[3].extract())
+      except:
+        logging.error("info fr error:%s" % msg[3].extract())
+        pass
+      try:
+        item['follow_times'] = int(msg[4].extract())
+      except:
+        logging.error("info fr error:%s" % msg[4].extract())
+        pass
+      try:
+        item['view_times'] = int(msg[5].extract().strip("\"").strip())
+      except:
+        logging.error("info fr error:url:%s,view_times:%s" % (response.url, msg[5].extract()))
         pass
 
      item['trans_history'] = {}
      i = 0
      for li in response.xpath('.//div[@id="chengjiao_record"]//li'):
       trans_price = li.xpath('./span[@class="record_price"]/text()').extract()[0]
-      trans_price = trans_price.strip("万")
+      trans_price = trans_price.strip().strip("万")
       try:
        trans_price = float(trans_price)
       except:
+       print("Error for trans_price %s, set -1" % trans_price)
        trans_price = -1
       detail = li.xpath('./p[@class="record_detail"]/text()').extract()[0]
       trans_date = detail.split(",")[-1].strip()
@@ -273,7 +301,8 @@ class LianjiaSpider(scrapy.Spider):
        item['trans_history'][trans_date]['view_times'] = item['view_times']
       i += 1
      
-     agent_a = response.xpath('.//div[@class="agent-box"]/div[@class="myAgent"]/div[@class="name"]/a/text()')
+     #agent_a = response.xpath('.//div[@class="agent-box"]/div[@class="myAgent"]/div[@class="name"]/a/text()')
+     agent_a = response.xpath('.//div[@class="floatAgent"]/div[@class="name"]/a/text()')
      try:
       item['district'] = agent_a[0].extract().strip()
      except:
@@ -292,12 +321,13 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
   #bj.lianjia.com/ershoufang/chaoyang/
   base_url_pattern = 'https://%s.ke.com/ershoufang/%s/pg'
   crawled_urls_txt_name = "%s_%s_second_house_sale_crawled_urls.txt"
-  crawl_url_xpath = './/div[@class="leftContent"]/ul[@class="sellListContent"]//li[@class="clear"]'
-  re_visit_times = re.compile(r'(\d+)次带看')
+  crawl_url_xpath = './/div[@class="leftContent"]//ul[@class="sellListContent"]//li[@class="clear"]'
+  #re_visit_times = re.compile(r'(\d+)次带看')
+  re_follow_times = re.compile(r'(\d+)人关注')
   def isCrawled(self, link, item):
     if link in self.crawled_urls:
       if item['list_price'] == self.crawled_urls[link][0]:
-        if not item['visit_times'] or (len(self.crawled_urls[link]) > 2 and item['visit_times'] == self.crawled_urls[link][2]):
+        if not item['follow_times'] or (len(self.crawled_urls[link]) > 2 and item['follow_times'] == self.crawled_urls[link][2]):
           return True
     return False
     
@@ -314,11 +344,11 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
      print("parseHouseList:%s" % house_link)
      #item['list_price'] = box.xpath('.//div[@class="followInfo"]//div[@class="totalPrice"]/span/text()').extract()[0]
      item['list_price'] = box.xpath('.//div[@class="priceInfo"]//div[@class="totalPrice"]/span/text()').extract()[0]
-     reg_ret = self.re_visit_times.search(box.xpath('.//div[@class="followInfo"]/text()').extract()[0])
+     reg_ret = self.re_follow_times.search(box.xpath('.//div[@class="followInfo"]/text()').extract()[0])
      if reg_ret:
-      item['visit_times'] = reg_ret.group(1)
+      item['follow_times'] = reg_ret.group(1)
      else:
-      item['visit_times'] = None
+      item['follow_times'] = None
      is_crawled_success = self.isCrawled(house_link, item)
      if not is_crawled_success:
       yield scrapy.Request(house_link,callback=self.parseHousePage,meta=item,dont_filter=True)
@@ -336,7 +366,10 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
         return
      
      item = response.meta
-
+     item["visit_times"] = -1
+     item['visit_times_7'] = -1
+     item['visit_times_30'] = -1
+     
      construction_year = response.xpath('.//div[@class="overview"]//div[@class="houseInfo"]/\
      div[@class="area"]/div[@class="subInfo"]/text()').extract()
      item['construction_year'] = "0000"
@@ -363,11 +396,18 @@ class SecondHandSaleLianjiaSpider(LianjiaSpider):
      follow_times = title_wrapper.xpath('.//span[@id="favCount"]/text()').extract()[0]
      item['follow_times'] = follow_times
      try:
-      visit_times = title_wrapper.xpath('.//span[@id="cartCount"]/text()').extract()[0]
-      item['visit_times'] = visit_times
+      #visit_times = title_wrapper.xpath('.//span[@id="cartCount"]/text()').extract()[0]
+      visit_times_7 = response.xpath('.//div[@id="record"]//div[@class="count"]/text()').extract()[0]
+      item['visit_times_7'] = visit_times_7
      except:
       pass
-     
-     self.crawled_urls[response.url] = [item['list_price'],item['list_date'],item['visit_times']]
-     self.file.write(" ".join([response.url,item['list_price'],item['list_date'],item['visit_times']]) + "\n")
+      
+     try:
+      visit_times_30 = response.xpath('.//div[@id="record"]//div[@class="totalCount"]/span/text()').extract()[0]
+      item['visit_times_30'] = visit_times_30
+     except:
+      pass
+      
+     self.crawled_urls[response.url] = [item['list_price'],item['list_date'],item['follow_times']]
+     self.file.write(" ".join([response.url,item['list_price'],item['list_date'],item['follow_times']]) + "\n")
      return item
