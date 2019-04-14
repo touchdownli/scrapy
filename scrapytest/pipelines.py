@@ -194,3 +194,21 @@ class MySQLSecondHandSaleLianjiaPipeline(MySQLLianjiaPipeline):
       except Exception as e:
           logging.error("insert_price_info: %s" % (e))          
       return item
+      
+import codecs
+import json
+class SplashTestPipeline(object):
+    def __init__(self):
+        # self.file = open('data.json', 'wb')
+        self.file = codecs.open(
+            'splash.txt', 'w', encoding='gbk')
+
+    def process_item(self, item, spider):
+        if spider.name != "scrapy_splash":
+          return item
+        line = json.dumps(dict(item), ensure_ascii=False) + "\n"
+        self.file.write(line)
+        return item
+
+    def spider_closed(self, spider):
+        self.file.close()

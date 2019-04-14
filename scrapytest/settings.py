@@ -50,6 +50,12 @@ REDIRECT_ENABLED = False
 #SPIDER_MIDDLEWARES = {
 #    'scrapytest.middlewares.ScrapytestSpiderMiddleware': 543,
 #}
+SPLASH_URL = 'http://192.168.99.101:8050'
+SPIDER_MIDDLEWARES = {
+    #'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
+}
+#DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
+HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
@@ -58,6 +64,9 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapytest.middlewares.MyUserAgentMiddleware': 400,
     #'scrapytest.proxy_middleware.AutoProxyMiddleware': 543,
     #'scrapytest.manual_proxy_middleware.ProxyMiddleware': 543,
+    'scrapy_splash.SplashCookiesMiddleware': 723,
+    'scrapy_splash.SplashMiddleware': 725,
+    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
 }
 
 #DUPEFILTER_CLASS = 'scrapytest.url_filter.CustomURLFilter'
@@ -74,7 +83,8 @@ ITEM_PIPELINES = {
     #'scrapytest.pipelines.ScrapytestPipeline': 300,
     #'scrapytest.pipelines.MySQL51JobPipeline': 300,
     'scrapytest.pipelines.MySQLLianjiaPipeline': 301,
-    'scrapytest.pipelines.MySQLSecondHandSaleLianjiaPipeline':302
+    'scrapytest.pipelines.MySQLSecondHandSaleLianjiaPipeline':302,
+    'scrapytest.pipelines.SplashTestPipeline':303
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
