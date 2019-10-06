@@ -64,8 +64,8 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapytest.middlewares.MyUserAgentMiddleware': 400,
     #'scrapytest.proxy_middleware.AutoProxyMiddleware': 543,
     #'scrapytest.manual_proxy_middleware.ProxyMiddleware': 543,
-    'scrapy_splash.SplashCookiesMiddleware': 723,
-    'scrapy_splash.SplashMiddleware': 725,
+    #'scrapy_splash.SplashCookiesMiddleware': 723,
+    #'scrapy_splash.SplashMiddleware': 725,
     'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
 }
 
@@ -83,8 +83,8 @@ ITEM_PIPELINES = {
     #'scrapytest.pipelines.ScrapytestPipeline': 300,
     #'scrapytest.pipelines.MySQL51JobPipeline': 300,
     'scrapytest.pipelines.MySQLLianjiaPipeline': 301,
-    'scrapytest.pipelines.MySQLSecondHandSaleLianjiaPipeline':302,
-    'scrapytest.pipelines.SplashTestPipeline':303
+    'scrapytest.pipelines.MySQLSecondHandSaleLianjiaPipeline':302
+    #'scrapytest.pipelines.SplashTestPipeline':303
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

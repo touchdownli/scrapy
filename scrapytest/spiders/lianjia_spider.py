@@ -28,6 +28,7 @@ class LianjiaSpider(scrapy.Spider):
   
   base_info_name_2_item_name = {
   '链家编号':'id',
+  '房源核验统一编码':'uuid',
   '房屋户型':'layout',
   '所在楼层':'floor',
   '建筑面积':'total_area',
@@ -90,7 +91,7 @@ class LianjiaSpider(scrapy.Spider):
         now_trans_date = datetime.strptime(item['trans_date'],'%Y-%m-%d')
         crawled_trans_date = datetime.strptime(self.crawled_urls[link][0],'%Y-%m-%d')
         diff = now_trans_date - crawled_trans_date
-        if diff.days < 30:
+        if diff.days < 60:
           return True
       else:
         return False
@@ -220,7 +221,7 @@ class LianjiaSpider(scrapy.Spider):
      item['trans_date'] = current_trans_date
      if self.isCrawled(response.url, item):
       return
-    '''
+     '''
      current_trans_date = item['trans_date']
 
      msg = response.xpath('.//div[@class="info fr"]/div[@class="msg"]/span/label/text()')

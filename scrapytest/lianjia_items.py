@@ -19,6 +19,7 @@ class LianjiaItem(scrapy.Item):
     elevator=scrapy.Field()
     
     id=scrapy.Field()
+    uuid=scrapy.Field()
     trans_right=scrapy.Field()
     list_date=scrapy.Field()
     house_property=scrapy.Field()

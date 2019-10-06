@@ -78,7 +78,7 @@ class MySQLLianjiaPipeline(object):
 
     def insert_lianjian_house(self, item):
         self.cursor.execute("\
-        insert into lianjia_house(id, layout, floor, \
+        insert into lianjia_house(id, uuid, layout, floor, \
         total_area,layout_structure,usable_area,\
         build_type,orientation,construction_year,\
         decoration,build_structure,heating_mode,\
@@ -87,7 +87,7 @@ class MySQLLianjiaPipeline(object):
         trans_right,house_property,ownership_type,\
         community,district,business_district,\
         crawl_unit,city,rent_area) \
-        values(%s, %s, %s, \
+        values(%s, %s, %s, %s, \
           %s, %s, %s,\
           %s, %s, %s, \
           %s, %s, %s, \
@@ -96,7 +96,7 @@ class MySQLLianjiaPipeline(object):
           %s, %s, %s, \
           %s, %s, %s, \
           %s, %s, %s)",
-        (item['id'], item['layout'], item['floor'],
+        (item['id'], item['uuid'], item['layout'], item['floor'],
         item['total_area'], item['layout_structure'], item['usable_area'],
         item['build_type'], item['orientation'], item['construction_year'],
         item['decoration'], item['build_structure'], item['heating_mode'],
